@@ -121,22 +121,37 @@ class IPFSFiles extends React.Component {
         this.setState( s => ({ addRslt: resultAdd, history: s.history.concat( resultAdd.cid.toString() ) } ) );
     }
 
-    catFile = async ( path ) => {
-        if ( ! this.check() && ! path ) return;
+    catFile = async (path) => {
+        if (!this.check() && !path) return;
         let arr = [];
         let length = 0;
-        for await (const chunk of this.node.cat( path ) ) {
-            arr.push( chunk);
+        for await (const chunk of this.node.cat(path)) {
+            arr.push(chunk);
             length += chunk.length;
         }
-        let out = new Uint8Array( length );
+        let out = new Uint8Array(length);
         let ptr = 0;
         arr.forEach(item => {
-            out.set( item, ptr );
+            out.set(item, ptr);
             ptr += item.length;
         });
-        this.setState({ catRslt :  new TextDecoder().decode( out ) });
+        this.setState({ catRslt: out });  // save Uint8Array instead of string
+    };
+
+    downloadFile = async (path) => {
+        this.catFile(path);
+
+        const blob = new Blob([this.state.catRslt], { type: "application/octet-stream" });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', this.state.catPath + ".tar.gz"); // working with archives only for now
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        //TODO bug:the button has to be pressed twice in order to get file contents
     }
+
 
     stat = async( path ) => {
         if ( this.check() && ! path ) return;
@@ -247,7 +262,7 @@ class IPFSFiles extends React.Component {
                     }}
                 />
                 <div>
-                    { this.state.catRslt }
+                    {/*{ this.state.catRslt }*/}
                 </div>
 
                 {/* Add file upload UI */}
@@ -261,6 +276,11 @@ class IPFSFiles extends React.Component {
                     <Button id="uploadButton" variant="contained" onClick={this.onFileUpload}>Upload</Button>
                 </div>
                 {this.fileData()}
+                <div padding={20}>
+                    <IconButton onClick={async e => { await this.catFile(this.state.catPath); this.downloadFile(this.state.catPath); }} >
+                        <SubdirectoryArrowLeftIcon />
+                    </IconButton>
+                </div>
             </>
         );
     }
