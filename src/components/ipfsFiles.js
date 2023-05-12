@@ -6,6 +6,8 @@ import { create } from 'ipfs-http-client';
 import * as ipfsCluster from 'ipfs-cluster-api';
 import Button from "@mui/material/Button";
 import "../index.css";
+import CryptoJS from "crypto-js";
+
 
 const cluster = ipfsCluster({
     host: '192.168.100.5',
@@ -32,27 +34,6 @@ class IPFSFiles extends React.Component {
         this.setState({ selectedFile: event.target.files[0] });
     };
 
-    onFileUpload = async () => {
-        if (!this.state.selectedFile) return;
-
-        const formData = new FormData();
-        formData.append(
-            "myFile",
-            this.state.selectedFile,
-            this.state.selectedFile.name
-        );
-
-        console.log(this.state.selectedFile);
-
-        const resultAdd = await this.node.add( this.state.selectedFile )
-
-        const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
-            err ? console.error(err) : console.log('pin added')
-        })
-        console.log(resultAdd.cid.toString())
-        this.setState( s => ({ addRslt: resultAdd, history: s.history.concat( resultAdd.cid.toString() ) } ) );
-    };
-
     fileData = () => {
         if (this.state.selectedFile) {
             return (
@@ -73,6 +54,8 @@ class IPFSFiles extends React.Component {
 
     start = async () => {
         console.log("this.start()");
+        console.log("Secret Key: ", process.env.REACT_APP_SECRET_KEY);
+
         try{
             this.node = await create({
                 //TODO host was localhost, port was 5001
@@ -138,10 +121,57 @@ class IPFSFiles extends React.Component {
         this.setState({ catRslt: out });  // save Uint8Array instead of string
     };
 
-    downloadFile = async (path) => {
-        this.catFile(path);
+    onFileUpload = async () => {
+        if (!this.state.selectedFile) return;
 
-        const blob = new Blob([this.state.catRslt], { type: "application/octet-stream" });
+        const formData = new FormData();
+
+        // Read the file data
+        const fileReader = new FileReader();
+        fileReader.readAsText(this.state.selectedFile, "UTF-8");
+        fileReader.onload = async (e) => {
+            // Encrypt the file data
+            const encryptedData = CryptoJS.AES.encrypt(
+                e.target.result,
+                process.env.REACT_APP_SECRET_KEY
+            ).toString();
+
+            formData.append("myFile", new Blob([encryptedData]), this.state.selectedFile.name);
+
+            console.log(this.state.selectedFile);
+
+            const resultAdd = await this.node.add(new Blob([encryptedData]))
+
+            const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
+                err ? console.error(err) : console.log('pin added')
+            })
+            console.log(resultAdd.cid.toString())
+            this.setState(s => ({ addRslt: resultAdd, history: s.history.concat(resultAdd.cid.toString()) }));
+        };
+    };
+
+    downloadFile = async (path) => {
+        if (!this.check() && !path) return;
+
+        let arr = [];
+        let length = 0;
+        for await (const chunk of this.node.cat(path)) {
+            arr.push(chunk);
+            length += chunk.length;
+        }
+
+        let out = new Uint8Array(length);
+        let ptr = 0;
+        arr.forEach(item => {
+            out.set(item, ptr);
+            ptr += item.length;
+        });
+
+        // Decrypt the file data
+        const bytes = CryptoJS.AES.decrypt(new TextDecoder().decode(out), process.env.REACT_APP_SECRET_KEY);
+        const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+
+        const blob = new Blob([decryptedData], { type: "application/octet-stream" });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -149,8 +179,8 @@ class IPFSFiles extends React.Component {
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
-        //TODO bug:the button has to be pressed twice in order to get file contents
-    }
+    };
+
 
 
     stat = async( path ) => {
