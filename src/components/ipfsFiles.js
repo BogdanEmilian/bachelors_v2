@@ -10,7 +10,7 @@ import CryptoJS from "crypto-js";
 
 
 const cluster = ipfsCluster({
-    host: '192.168.100.5',
+    host: '192.168.1.164',
     port: '9094',
     protocol: 'http'
 });
@@ -307,7 +307,7 @@ class IPFSFiles extends React.Component {
                 </div>
                 {this.fileData()}
                 <div padding={20}>
-                    <IconButton onClick={async e => { await this.catFile(this.state.catPath); this.downloadFile(this.state.catPath); }} >
+                    <IconButton onClick={async e => { await this.downloadFile(this.state.catPath); }} >
                         <SubdirectoryArrowLeftIcon />
                     </IconButton>
                 </div>
