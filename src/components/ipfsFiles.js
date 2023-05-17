@@ -6,11 +6,16 @@ import { create } from 'ipfs-http-client';
 import * as ipfsCluster from 'ipfs-cluster-api';
 import Button from "@mui/material/Button";
 import "../index.css";
-import CryptoJS from "crypto-js";
+import NodeRSA from 'node-rsa';
 
+//TODO: atm, the 2 VMs have different key pairs for RSA (website for generating pairs is: https://travistidwell.com/jsencrypt/demo/)
+//TODO: handle exception on decryption fail due to keys not matching
+const key = new NodeRSA();
+key.importKey(process.env.REACT_APP_PRIVATE_KEY, 'private');
+key.importKey(process.env.REACT_APP_PUBLIC_KEY, 'public');
 
 const cluster = ipfsCluster({
-    host: '192.168.100.5',
+    host: '192.168.1.164',
     port: '9094',
     protocol: 'http'
 });
@@ -58,7 +63,7 @@ class IPFSFiles extends React.Component {
 
         try{
             this.node = await create({
-                //TODO host was localhost, port was 5001
+                //TODO change the host to the storage provider
                 host: 'localhost', port: '5001', protocol: 'http'
             });
 
@@ -124,23 +129,16 @@ class IPFSFiles extends React.Component {
     onFileUpload = async () => {
         if (!this.state.selectedFile) return;
 
-        const formData = new FormData();
-
-        // Read the file data
         const fileReader = new FileReader();
-        fileReader.readAsText(this.state.selectedFile, "UTF-8");
+        fileReader.readAsArrayBuffer(this.state.selectedFile);
         fileReader.onload = async (e) => {
-            // Encrypt the file data
-            const encryptedData = CryptoJS.AES.encrypt(
-                e.target.result,
-                process.env.REACT_APP_SECRET_KEY
-            ).toString();
+            // Convert ArrayBuffer to Buffer
+            const buffer = Buffer.from(e.target.result);
 
-            formData.append("myFile", new Blob([encryptedData]), this.state.selectedFile.name);
+            // Encrypt file data
+            const encryptedData = key.encryptPrivate(buffer, 'base64');
 
-            console.log(this.state.selectedFile);
-
-            const resultAdd = await this.node.add(new Blob([encryptedData]))
+            const resultAdd = await this.node.add({ content: encryptedData })
 
             const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
                 err ? console.error(err) : console.log('pin added')
@@ -167,15 +165,20 @@ class IPFSFiles extends React.Component {
             ptr += item.length;
         });
 
-        // Decrypt the file data
-        const bytes = CryptoJS.AES.decrypt(new TextDecoder().decode(out), process.env.REACT_APP_SECRET_KEY);
-        const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+        // Convert the Uint8Array to a string
+        const encryptedData = new TextDecoder().decode(out);
 
+        // Decrypt file data
+        const decryptedData = key.decryptPublic(Buffer.from(encryptedData, 'base64'));
+
+        // Create a blob from the decrypted data
         const blob = new Blob([decryptedData], { type: "application/octet-stream" });
         const url = window.URL.createObjectURL(blob);
+
+        // Download the file
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', this.state.catPath + ".tar.gz"); // working with archives only for now
+        link.setAttribute('download', this.state.catPath + ".txt"); // working with archives only for now
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
@@ -307,7 +310,7 @@ class IPFSFiles extends React.Component {
                 </div>
                 {this.fileData()}
                 <div padding={20}>
-                    <IconButton onClick={async e => { await this.catFile(this.state.catPath); this.downloadFile(this.state.catPath); }} >
+                    <IconButton onClick={async e => { await this.downloadFile(this.state.catPath); }} >
                         <SubdirectoryArrowLeftIcon />
                     </IconButton>
                 </div>
