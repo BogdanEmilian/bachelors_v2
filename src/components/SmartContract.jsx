@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
 import {ethers} from "ethers";
-import abi from "./StorageMarket.json";
-import erc20Abi from "./CloudStorageCoin.json";
+import abi from "./../contracts/StorageMarketABI.json";
+import erc20Abi from "./../contracts/CSC_ABI.json";
 import Web3 from 'web3';
 
 const CONTRACT_ADDRESS = "0x85d3D00c1a3fABb6Dca9550713c8A46dA7EAda24";

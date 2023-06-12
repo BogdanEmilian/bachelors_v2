@@ -13,6 +13,7 @@ import Drawer from '@mui/material/Drawer';
 
 //Components
 import IPFSFiles from './components/ipfsFiles';
+import SCApp from './components/StateContext';
 
 const theme = createTheme({
     palette: {
@@ -29,7 +30,7 @@ const theme = createTheme({
 
 const CONTEXT_IPFS = "ipfs";
 
-class  App extends React.Component {
+class App extends React.Component {
 
     constructor(props){
         super(props);
@@ -70,6 +71,7 @@ class  App extends React.Component {
                 onClose={ e => this.setState({ message : null}) }
                 message={ this.state.message }
                 />
+                <SCApp/>
             </ThemeProvider>
             </div>
         );
