@@ -150,23 +150,7 @@ class IPFSFiles extends React.Component {
         };
     };
 
-    downloadFile = async (path) => {
-        if (!this.check() && !path) return;
-
-        let arr = [];
-        let length = 0;
-        for await (const chunk of this.node.cat(path)) {
-            arr.push(chunk);
-            length += chunk.length;
-        }
-
-        let out = new Uint8Array(length);
-        let ptr = 0;
-        arr.forEach(item => {
-            out.set(item, ptr);
-            ptr += item.length;
-        });
-
+    downloadFile = async () => {
         // Decrypt the file data
         const bytes = CryptoJS.AES.decrypt(new TextDecoder().decode(out), process.env.REACT_APP_SECRET_KEY);
         const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
