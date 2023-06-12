@@ -21,6 +21,7 @@ export const StateContextProvider = ({ children }) => {
                 const accounts = await web3Instance.eth.getAccounts();
                 setWeb3(web3Instance);
                 setAccount(accounts[0]);
+                console.log(accounts[0]);
             } catch (err) {
                 console.error(err);
             }
@@ -63,19 +64,44 @@ export const StateContextProvider = ({ children }) => {
 
     const requestPayment = async (amount) => {
         try {
+            await tokenContract.methods.approve(CONTRACT_ADDRESS, amount).send({from: address});
             await contract.methods.requestPayment(amount).send({from: address});
         } catch (error) {
             console.error(error);
         }
     };
 
-    const hourlyPayment = async () => {
+    const [tokenContract, setTokenContract] = useState(null);
+
+    useEffect(() => {
+        const initializeTokenContract = async () => {
+            if (web3 && address) {
+                try {
+                    const tokenContractInstance = new web3.eth.Contract(
+                        erc20Abi,
+                        TOKEN_ADDRESS,
+                    );
+                    setTokenContract(tokenContractInstance);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        };
+
+        initializeTokenContract();
+    }, [web3, address]);
+
+    const hourlyPayment = async (amount) => {
         try {
+            // Approve the contract to spend tokens on behalf of the user
+            await tokenContract.methods.approve(CONTRACT_ADDRESS, amount).send({from: address});
+            // Call the hourlyPayment function on the contract
             await contract.methods.hourlyPayment().send({from: address});
         } catch (error) {
             console.error(error);
         }
     };
+
 
     return (
         <StateContext.Provider
