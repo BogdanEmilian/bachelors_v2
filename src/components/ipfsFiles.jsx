@@ -86,8 +86,12 @@ const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
 
 const IpfsFiles = (props) => {
     const [selectedFile, setSelectedFile] = useState(null);
+    const [addPath, setAddPath] = useState('');
+    const [addContent, setAddContent] = useState('');
     const [addRslt, setAddRslt] = useState(null);
     const [catPath, setCatPath] = useState('');
+    const [catRslt, setCatRslt] = useState(null);
+    const [history, setHistory] = useState([]);
     const [online, setOnline] = useState(false);
     const [node, setNode] = useState(null);
 
@@ -205,7 +209,9 @@ const IpfsFiles = (props) => {
             })
             console.log(resultAdd.cid.toString())
 
+            // Use setAddRslt and setHistory functions to update the state
             setAddRslt(resultAdd);
+            setHistory(history => history.concat(resultAdd.cid.toString()));
         };
     };
 
