@@ -10,7 +10,8 @@ const StateContext = createContext();
 export const StateContextProvider = ({ children }) => {
     const [web3, setWeb3] = useState(null);
     const [address, setAccount] = useState(null);
-    const [contract, setContract] = useState(null);
+    const [contract, setContract] = useState(null);                 // Storage Market
+    const [tokenContract, setTokenContract] = useState(null);       // CSC
 
     const connect = async () => {
         if (window.ethereum) {
@@ -73,8 +74,6 @@ export const StateContextProvider = ({ children }) => {
             console.error(error);
         }
     };
-
-    const [tokenContract, setTokenContract] = useState(null);
 
     useEffect(() => {
         const initializeTokenContract = async () => {

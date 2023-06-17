@@ -7,6 +7,11 @@ import * as ipfsCluster from 'ipfs-cluster-api';
 import Button from "@mui/material/Button";
 import "../index.css";
 import NodeRSA from 'node-rsa';
+import {createTheme, styled} from '@mui/material/styles';
+import Switch from '@mui/material/Switch';
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import {useStateContext} from "./SmartContract";
 
 //TODO: atm, the 2 VMs have different key pairs for RSA (website for generating pairs is: https://travistidwell.com/jsencrypt/demo/)
 //TODO: handle exception on decryption fail due to keys not matching
@@ -14,11 +19,84 @@ const key = new NodeRSA();
 key.importKey(process.env.REACT_APP_PRIVATE_KEY, 'private');
 key.importKey(process.env.REACT_APP_PUBLIC_KEY, 'public');
 
+const {
+    connect,
+    registerUser,
+    registerStorageProvider,
+    requestPayment,
+    hourlyPayment,
+} = useStateContext();
+
+const [userCostDaily, setUserCostDaily] = React.useState(0);
+const [providerAddresses, setProviderAddresses] = React.useState('');
+const [storageCapacity, setStorageCapacity] = React.useState(0);
+const [rewardDaily, setRewardDaily] = React.useState(0);
+const [paymentAmount, setPaymentAmount] = React.useState(0);
+const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
+
 const cluster = ipfsCluster({
     host: '192.168.1.164',
     port: '9094',
     protocol: 'http'
 });
+
+const Android12Switch = styled(Switch)(({ theme }) => ({
+    padding: 8,
+    '& .MuiSwitch-track': {
+        borderRadius: 22 / 2,
+        '&:before, &:after': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 16,
+            height: 16,
+        },
+        '&:before': {
+            left: 12,
+        },
+        '&:after': {
+            right: 12,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxShadow: 'none',
+        width: 16,
+        height: 16,
+        margin: 2,
+    },
+    '&.MuiSwitch-colorSecondary.Mui-checked': {
+        color: theme.palette.primary.main, // purple when enabled
+    },
+    '&.MuiSwitch-colorSecondary.Mui-checked + .MuiSwitch-track': {
+        backgroundColor: theme.palette.primary.main, // purple when enabled
+    },
+    '&.MuiSwitch-colorSecondary.Mui-disabled': {
+        color: theme.palette.secondary.main, // green when disabled
+    },
+    '&.MuiSwitch-colorSecondary.Mui-disabled + .MuiSwitch-track': {
+        backgroundColor: theme.palette.secondary.main, // green when disabled
+    },
+}));
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#800080', // Purple
+        },
+        secondary: {
+            main: '#008000', // Green
+        }
+    }
+});
+const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
+    return (
+        <Box display="flex" alignItems="center">
+            <Typography>{leftLabel}</Typography>
+            <Android12Switch {...props} theme={theme}/>
+            <Typography>{rightLabel}</Typography>
+        </Box>
+    );
+};
 
 class IPFSFiles extends React.Component {
     constructor(props) {
@@ -45,6 +123,7 @@ class IPFSFiles extends React.Component {
                 <div>
                     <h4>File Details:</h4>
                     <p>File Name: {this.state.selectedFile.name}</p>
+                    <p>File Size: {this.state.selectedFile.size}</p>
                 </div>
             );
         } else {
@@ -249,9 +328,24 @@ class IPFSFiles extends React.Component {
     render() {
         return (
             <>
-                <Button id="start-button" color="inherit" onClick={this.handleButtonClick}>
-                    {this.state.online ? 'stop' : 'start'}
-                </Button>
+                <Box display="flex" justifyContent="flex-end" marginRight={2}>
+                    <LabeledSwitch
+                        defaultChecked
+                        leftLabel="User"
+                        rightLabel="Storage Provider"
+                    />
+                </Box>
+                <Box>
+                {/*    implement connect to metamask*/}
+                </Box>
+                <Box display="flex" justifyContent="flex-start" marginLeft={2}>
+                    <Button id="start-button" color="inherit" onClick={this.handleButtonClick}>
+                        {this.state.online ? 'stop' : 'start'}
+                    </Button>
+                </Box>
+
+
+
                 <h1>IPFS FILES API</h1>
                 <h2>ipfs.add()</h2>
 
