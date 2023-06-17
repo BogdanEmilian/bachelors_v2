@@ -12,7 +12,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Drawer from '@mui/material/Drawer';
 
 //Components
-import IPFSFiles from './components/ipfsFiles';
+import IpfsFiles from './components/ipfsFiles';
 import SCApp from './components/StateContext';
 
 const theme = createTheme({
@@ -63,7 +63,7 @@ class App extends React.Component {
 
                 </Toolbar>
                 </AppBar>
-                    <IPFSFiles />
+                    <IpfsFiles />
                 </Box>
                 <Snackbar
                 open={ this.state.message != null }

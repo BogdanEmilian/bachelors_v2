@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import SubdirectoryArrowLeftIcon from '@mui/icons-material/SubdirectoryArrowLeft';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -18,21 +19,6 @@ import {useStateContext} from "./SmartContract";
 const key = new NodeRSA();
 key.importKey(process.env.REACT_APP_PRIVATE_KEY, 'private');
 key.importKey(process.env.REACT_APP_PUBLIC_KEY, 'public');
-
-const {
-    connect,
-    registerUser,
-    registerStorageProvider,
-    requestPayment,
-    hourlyPayment,
-} = useStateContext();
-
-const [userCostDaily, setUserCostDaily] = React.useState(0);
-const [providerAddresses, setProviderAddresses] = React.useState('');
-const [storageCapacity, setStorageCapacity] = React.useState(0);
-const [rewardDaily, setRewardDaily] = React.useState(0);
-const [paymentAmount, setPaymentAmount] = React.useState(0);
-const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
 
 const cluster = ipfsCluster({
     host: '192.168.1.164',
@@ -98,32 +84,38 @@ const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
     );
 };
 
-class IPFSFiles extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedFile: null,
-            addPath: '',
-            addContent: '',
-            addRslt: null,
-            catPath: '',
-            catRslt: null,
-            history: [],
-            online: false
-        }
-    }
+const IpfsFiles = (props) => {
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [addPath, setAddPath] = useState('');
+    const [addContent, setAddContent] = useState('');
+    const [addRslt, setAddRslt] = useState(null);
+    const [catPath, setCatPath] = useState('');
+    const [catRslt, setCatRslt] = useState(null);
+    const [history, setHistory] = useState([]);
+    const [online, setOnline] = useState(false);
+    const [node, setNode] = useState(null);
 
-    onFileChange = event => {
-        this.setState({ selectedFile: event.target.files[0] });
+    useEffect(() => {
+        if (props.online !== online) {
+            if (online) {
+                start();
+            } else {
+                end();
+            }
+        }
+    }, [props.online, online]);
+
+    const onFileChange = event => {
+        setSelectedFile(event.target.files[0]);
     };
 
-    fileData = () => {
-        if (this.state.selectedFile) {
+    const fileData = () => {
+        if (selectedFile) {
             return (
                 <div>
                     <h4>File Details:</h4>
-                    <p>File Name: {this.state.selectedFile.name}</p>
-                    <p>File Size: {this.state.selectedFile.size}</p>
+                    <p>File Name: {selectedFile.name}</p>
+                    <p>File Size: {selectedFile.size}</p>
                 </div>
             );
         } else {
@@ -136,49 +128,41 @@ class IPFSFiles extends React.Component {
         }
     };
 
-    start = async () => {
-        console.log("this.start()");
+    const start = async () => {
+        console.log("start()");
         console.log("Secret Key: ", process.env.REACT_APP_SECRET_KEY);
 
         try{
-            this.node = await create({
+            const createdNode = await create({
                 //TODO change the host to the storage provider
                 host: 'localhost', port: '5001', protocol: 'http'
             });
-
+            setNode(createdNode);
         } catch(e) {
             console.error(e);
         }
     }
 
-    end = async () => {
-        console.log("this.end()");
-        await this.node.stop();
-    }
-
-    async componentDidUpdate(prevProps, prevState, snapshot) {
-
-        if (prevProps.online !== this.props.online) {
-            console.log("componentDidUpdate");
-            if (this.props.online) {
-                await this.start();
-            }else {
-                await this.end();
-            }
+    const end = async () => {
+        console.log("end()");
+        if(node) {
+            await node.stop();
+            setNode(null); // It's probably a good idea to set the node to null after stopping it
         }
     }
 
-    check = () => {
-        return this.node.isOnline();
+
+    const check = () => {
+        return node.isOnline();
     }
 
-    addFile = async ( path, content ) => {
+    const addFile = async ( path, content ) => {
         if ( ! this.check() && ( !path && ! content ) ) return;
         let data = {};
         if ( path ) data["path"] = path;
         if ( content ) data["content"] = content;
 
-        const resultAdd = await this.node.add( data )
+        const resultAdd = await node.add( data )
 
         const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
             err ? console.error(err) : console.log('pin added')
@@ -188,11 +172,11 @@ class IPFSFiles extends React.Component {
         this.setState( s => ({ addRslt: resultAdd, history: s.history.concat( resultAdd.cid.toString() ) } ) );
     }
 
-    catFile = async (path) => {
+    const catFile = async (path) => {
         if (!this.check() && !path) return;
         let arr = [];
         let length = 0;
-        for await (const chunk of this.node.cat(path)) {
+        for await (const chunk of node.cat(path)) {
             arr.push(chunk);
             length += chunk.length;
         }
@@ -205,11 +189,11 @@ class IPFSFiles extends React.Component {
         this.setState({ catRslt: out });  // save Uint8Array instead of string
     };
 
-    onFileUpload = async () => {
-        if (!this.state.selectedFile) return;
+    const onFileUpload = async () => {
+        if (!selectedFile) return;
 
         const fileReader = new FileReader();
-        fileReader.readAsArrayBuffer(this.state.selectedFile);
+        fileReader.readAsArrayBuffer(selectedFile);
         fileReader.onload = async (e) => {
             // Convert ArrayBuffer to Buffer
             const buffer = Buffer.from(e.target.result);
@@ -217,7 +201,7 @@ class IPFSFiles extends React.Component {
             // Encrypt file data
             const encryptedData = key.encryptPrivate(buffer, 'base64');
 
-            const resultAdd = await this.node.add({ content: encryptedData })
+            const resultAdd = await node.add({ content: encryptedData })
 
             const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
                 err ? console.error(err) : console.log('pin added')
@@ -227,12 +211,12 @@ class IPFSFiles extends React.Component {
         };
     };
 
-    downloadFile = async (path) => {
+    const downloadFile = async (path) => {
         if (!this.check() && !path) return;
 
         let arr = [];
         let length = 0;
-        for await (const chunk of this.node.cat(path)) {
+        for await (const chunk of node.cat(path)) {
             arr.push(chunk);
             length += chunk.length;
         }
@@ -265,17 +249,17 @@ class IPFSFiles extends React.Component {
 
 
 
-    stat = async( path ) => {
+    const stat = async( path ) => {
         if ( this.check() && ! path ) return;
-        const stats = await this.node.files.stat( path )
+        const stats = await node.files.stat( path )
         this.setState({ statRsp : `${ stats.type} ${ stats.size} bytes ` });
     }
 
-    read = async ( path ) => {
+    const read = async ( path ) => {
         if ( ! this.check() && ! path ) return;
         let arr = [];
         let length = 0;
-        for await (const chunk of this.node.files.read( path ) ) {
+        for await (const chunk of node.files.read( path ) ) {
             arr.push( chunk);
             length += chunk.length;
         }
@@ -288,15 +272,15 @@ class IPFSFiles extends React.Component {
         this.setState({ readRslt :  new TextDecoder().decode( out ) });
     }
 
-    write = async ( path, content ) => {
+    const write = async ( path, content ) => {
         if ( ! this.check() || !path || ! content ) return;
-        await this.node.files.write( path, content, { parents:true, create:true } );
+        await node.files.write( path, content, { parents:true, create:true } );
     }
 
-    ls = async( path ) => {
+    const ls = async( path ) => {
         if ( this.check() && ! path ) return;
         const arr = [];
-        for await (const file of this.node.files.ls( path )) {
+        for await (const file of node.files.ls( path )) {
             arr.push( file );
             console.log( file );
         }
@@ -304,10 +288,10 @@ class IPFSFiles extends React.Component {
     }
 
 
-    resolve = async ( path ) => {
+    const resolve = async ( path ) => {
         if ( this.check() && ! path ) return;
         const arr = [];
-        for await (const name of this.node.name.resolve( path )) {
+        for await (const name of node.name.resolve( path )) {
             arr.push( name );
             console.log( name )
         }
@@ -315,102 +299,97 @@ class IPFSFiles extends React.Component {
 
     }
 
-    handleButtonClick = async () => {
-        if (this.state.online) {
-            await this.end();
-            this.setState({ online: false });
+    const handleButtonClick = async () => {
+        if (online) {
+            await end();
+            setOnline(false);
         } else {
-            await this.start();
-            this.setState({ online: true });
+            await start();
+            setOnline(true);
         }
     };
 
-    render() {
-        return (
-            <>
-                <Box display="flex" justifyContent="flex-end" marginRight={2}>
-                    <LabeledSwitch
-                        defaultChecked
-                        leftLabel="User"
-                        rightLabel="Storage Provider"
-                    />
-                </Box>
-                <Box>
-                {/*    implement connect to metamask*/}
-                </Box>
-                <Box display="flex" justifyContent="flex-start" marginLeft={2}>
-                    <Button id="start-button" color="inherit" onClick={this.handleButtonClick}>
-                        {this.state.online ? 'stop' : 'start'}
-                    </Button>
-                </Box>
+    return (
+        <>
+            <Box display="flex" justifyContent="flex-end" marginRight={2}>
+                <LabeledSwitch
+                    defaultChecked
+                    leftLabel="User"
+                    rightLabel="Storage Provider"
+                />
+            </Box>
+            <Box>
+            {/*    implement connect to metamask*/}
+            </Box>
+            <Box display="flex" justifyContent="flex-start" marginLeft={2}>
+                <Button id="start-button" color="inherit" onClick={handleButtonClick}>
+                    {online ? 'stop' : 'start'}
+                </Button>
+            </Box>
 
 
 
-                <h1>IPFS FILES API</h1>
-                <h2>ipfs.add()</h2>
+            <h1>IPFS FILES API</h1>
+            <h2>ipfs.add()</h2>
 
-                <TextField
-                    fullWidth
-                    id="input-with-icon-textfield"
-                    label="Path"
-                    onKeyUp={ e => this.setState({ addPath : e.target.value }) }
-                    onBlur={ e => this.setState({ addPath : e.target.value }) }
-                /> <TextField
+            <TextField
                 fullWidth
                 id="input-with-icon-textfield"
-                label="Content"
-                onKeyUp={ e => this.setState({ addContent : e.target.value }) }
-                onBlur={ e => this.setState({ addContent : e.target.value }) }
+                label="Path"
+                onKeyUp={ e => setAddPath(e.target.value) }
+                onBlur={ e => setAddPath(e.target.value) }
+            /> <TextField
+            fullWidth
+            id="input-with-icon-textfield"
+            label="Content"
+            onKeyUp={ e => setAddContent(e.target.value) }
+            onBlur={ e => setAddContent(e.target.value) }
 
+            InputProps={{
+                endAdornment: (
+                    <IconButton onClick={ e => addFile( setAddPath , setAddContent ) } >
+                        <SubdirectoryArrowLeftIcon />
+                    </IconButton>
+                ),
+            }}
+        />
+            <div>
+                { addRslt && addRslt.cid.toString() }
+            </div>
+            <h2> ipfs.cat() </h2>
+            <TextField
+                fullWidth
+                id="input-with-icon-textfield"
+                label="Path"
+                onKeyUp={ e => setCatPath(e.target.value) }
+                onBlur={ e => setCatPath(e.target.value) }
                 InputProps={{
                     endAdornment: (
-                        <IconButton onClick={ e => this.addFile( this.state.addPath , this.state.addContent ) } >
+                        <IconButton onClick={ e => catFile( catPath ) } >
                             <SubdirectoryArrowLeftIcon />
                         </IconButton>
                     ),
                 }}
             />
-                <div>
-                    { this.state.addRslt && this.state.addRslt.cid.toString() }
-                </div>
-                <h2> ipfs.cat() </h2>
-                <TextField
-                    fullWidth
-                    id="input-with-icon-textfield"
-                    label="Path"
-                    onKeyUp={ e => this.setState({ catPath : e.target.value }) }
-                    onBlur={ e => this.setState({ catPath : e.target.value }) }
-                    InputProps={{
-                        endAdornment: (
-                            <IconButton onClick={ e => this.catFile( this.state.catPath ) } >
-                                <SubdirectoryArrowLeftIcon />
-                            </IconButton>
-                        ),
-                    }}
-                />
-                <div>
-                    {/*{ this.state.catRslt }*/}
-                </div>
 
-                {/* Add file upload UI */}
-                <h1>
-                    Choose a file to upload on the blockchain
-                </h1>
-                <div>
-                    <input type="file" onChange={this.onFileChange} />
-                </div>
-                <div>
-                    <Button id="uploadButton" variant="contained" onClick={this.onFileUpload}>Upload</Button>
-                </div>
-                {this.fileData()}
-                <div padding={20}>
-                    <IconButton onClick={async e => { await this.downloadFile(this.state.catPath); }} >
-                        <SubdirectoryArrowLeftIcon />
-                    </IconButton>
-                </div>
-            </>
-        );
-    }
+            {/* Add file upload UI */}
+            <h1>
+                Choose a file to upload on the blockchain
+            </h1>
+            <div>
+                <input type="file" onChange={onFileChange} />
+            </div>
+            <div>
+                <Button id="uploadButton" variant="contained" onClick={onFileUpload}>Upload</Button>
+            </div>
+            {fileData()}
+            <div padding={20}>
+                <IconButton onClick={async e => { await downloadFile(catPath); }} >
+                    <SubdirectoryArrowLeftIcon />
+                </IconButton>
+            </div>
+        </>
+    );
 }
 
-export default IPFSFiles;
+export default IpfsFiles;
