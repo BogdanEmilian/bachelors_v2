@@ -1,11 +1,10 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
-import {ethers} from "ethers";
 import abi from "./../contracts/StorageMarketABI.json";
 import erc20Abi from "./../contracts/CSC_ABI.json";
 import Web3 from 'web3';
 
-const CONTRACT_ADDRESS = "0x85d3D00c1a3fABb6Dca9550713c8A46dA7EAda24";
-const TOKEN_ADDRESS = "0x6A1e1f5d6862fbB714cf865d99552FEB1474e983";
+const CONTRACT_ADDRESS = "0x2980AF5A0a9959b47DdBddecD40C92dfD9cEdD8a";
+const TOKEN_ADDRESS = "0x3629CE614196696154Ae18d9cc0f48CA7946EcCE";
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
@@ -56,6 +55,10 @@ export const StateContextProvider = ({ children }) => {
 
     const registerStorageProvider = async (providerAddresses, storageCapacity, rewardDaily) => {
         try {
+            console.log("Trimmed address: " + providerAddresses);
+            console.log("\n Storage capacity: " + storageCapacity + "\n Reward daily: " + rewardDaily);
+            console.log("From address: " + {from:address});
+
             await contract.methods.registerStorageProvider(providerAddresses, storageCapacity, rewardDaily).send({from: address});
         } catch (error) {
             console.error(error);
@@ -98,9 +101,11 @@ export const StateContextProvider = ({ children }) => {
             // Call the hourlyPayment function on the contract
             await contract.methods.hourlyPayment().send({from: address});
         } catch (error) {
+            console.log({from: address}.toString());
             console.error(error);
         }
     };
+
 
 
     return (

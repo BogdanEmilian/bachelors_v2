@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useStateContext } from './SmartContract';
 
@@ -15,6 +16,8 @@ function SCApp() {
     const [storageCapacity, setStorageCapacity] = React.useState(0);
     const [rewardDaily, setRewardDaily] = React.useState(0);
     const [paymentAmount, setPaymentAmount] = React.useState(0);
+    const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
+
 
     return (
         <div>
@@ -28,13 +31,15 @@ function SCApp() {
             <input type="text" value={providerAddresses} onChange={e => setProviderAddresses(e.target.value)} placeholder="Provider Addresses (comma separated)" />
             <input type="number" value={storageCapacity} onChange={e => setStorageCapacity(e.target.value)} placeholder="Storage Capacity" />
             <input type="number" value={rewardDaily} onChange={e => setRewardDaily(e.target.value)} placeholder="Reward Daily" />
-            <button onClick={() => registerStorageProvider(providerAddresses.split(','), storageCapacity, rewardDaily)}>Register Storage Provider</button>
+            <button onClick={() => registerStorageProvider(providerAddresses, storageCapacity, rewardDaily)}>Register Storage Provider</button>
 
             <h2>Request Payment</h2>
             <input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="Payment Amount" />
             <button onClick={() => requestPayment(paymentAmount)}>Request Payment</button>
 
-            <button onClick={hourlyPayment}>Hourly Payment</button>
+            <h2>Hourly Payment</h2>
+            <input type="number" value={hourlyPaymentAmount} onChange={e => setHourlyPaymentAmount(e.target.value)} placeholder="Payment Amount" />
+            <button onClick={() => hourlyPayment(hourlyPaymentAmount)}>Hourly Payment</button>
         </div>
     );
 }
