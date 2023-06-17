@@ -86,14 +86,11 @@ const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
 
 const IpfsFiles = (props) => {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [addPath, setAddPath] = useState('');
-    const [addContent, setAddContent] = useState('');
     const [addRslt, setAddRslt] = useState(null);
     const [catPath, setCatPath] = useState('');
-    const [catRslt, setCatRslt] = useState(null);
-    const [history, setHistory] = useState([]);
     const [online, setOnline] = useState(false);
     const [node, setNode] = useState(null);
+
 
     useEffect(() => {
         if (props.online !== online) {
@@ -186,7 +183,7 @@ const IpfsFiles = (props) => {
             out.set(item, ptr);
             ptr += item.length;
         });
-        this.setState({ catRslt: out });  // save Uint8Array instead of string
+        setCatRslt(out);  // save Uint8Array instead of string
     };
 
     const onFileUpload = async () => {
@@ -207,12 +204,14 @@ const IpfsFiles = (props) => {
                 err ? console.error(err) : console.log('pin added')
             })
             console.log(resultAdd.cid.toString())
-            this.setState(s => ({ addRslt: resultAdd, history: s.history.concat(resultAdd.cid.toString()) }));
+
+            setAddRslt(resultAdd);
         };
     };
 
+
     const downloadFile = async (path) => {
-        if (!this.check() && !path) return;
+        if (!check() && !path) return;
 
         let arr = [];
         let length = 0;
@@ -241,7 +240,7 @@ const IpfsFiles = (props) => {
         // Download the file
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', this.state.catPath + ".txt"); // working with archives only for now
+        link.setAttribute('download', path + ".txt");
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
