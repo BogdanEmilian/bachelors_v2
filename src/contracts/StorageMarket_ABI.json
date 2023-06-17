@@ -65,12 +65,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "storageCapacity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardDaily",
+        "name": "totalCapacity",
         "type": "uint256"
       }
     ],
@@ -98,13 +93,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [],
     "name": "requestPayment",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -123,16 +112,6 @@
       {
         "internalType": "uint256",
         "name": "totalCapacity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "dateStarted",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardDaily",
         "type": "uint256"
       }
     ],
@@ -166,11 +145,6 @@
         "internalType": "address",
         "name": "userAddress",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "dateUploaded",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",

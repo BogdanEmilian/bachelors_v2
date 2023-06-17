@@ -17,7 +17,6 @@ contract StorageMarket {
 
     struct StorageProvider {
         uint totalCapacity;
-        uint rewardDaily; // static reward for total space occupied, rewarded daily
     }
 
     CloudStorageCoin public token;
@@ -36,8 +35,8 @@ contract StorageMarket {
         users[msg.sender] = User(userAddress, 100000000000000000 * costDaily); // this represents the price of 0.1 tokens/GB of storage
     }
 
-    function registerStorageProvider(address providerAddress, uint totalCapacity, uint rewardDaily) public {
-        storageProviders[providerAddress] = StorageProvider(totalCapacity, rewardDaily);
+    function registerStorageProvider(address providerAddress, uint totalCapacity) public {
+        storageProviders[providerAddress] = StorageProvider(totalCapacity);
         providerAddresses.push(providerAddress); // Add provider address to array
     }
 

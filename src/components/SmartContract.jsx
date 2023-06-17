@@ -1,10 +1,10 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
-import abi from "./../contracts/StorageMarketABI.json";
+import abi from "../contracts/StorageMarket_ABI.json";
 import erc20Abi from "./../contracts/CSC_ABI.json";
 import Web3 from 'web3';
 
-const CONTRACT_ADDRESS = "0x2980AF5A0a9959b47DdBddecD40C92dfD9cEdD8a";
-const TOKEN_ADDRESS = "0x3629CE614196696154Ae18d9cc0f48CA7946EcCE";
+const CONTRACT_ADDRESS = "0xEED6B2798ef10AD8221936a068Da9D92Dc704FB5";  // Storage Market address
+const TOKEN_ADDRESS = "0x22e6633e0979cD0627DfeCB9e434761d291703C4";     // CSC address
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
