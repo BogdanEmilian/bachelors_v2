@@ -87,9 +87,9 @@ export const StateContextProvider = ({ children }) => {
     };
 
     // request payment
-    const requestPayment = async () => {
+    const requestPayment = async (amount) => {
         try {
-            await tokenContract.approve(contractAddress, amount);
+            await tokenContract.approve(address, amount);
             await contract.methods.requestPayment().send({from: address});
         } catch (error) {
             console.error(error);
