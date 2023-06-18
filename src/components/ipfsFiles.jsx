@@ -338,6 +338,61 @@ const IpfsFiles = (props) => {
         deleteUser();
     }
 
+    const [isProvider, setIsProvider] = useState(false);
+
+    const UserComponents = () => (
+        <>
+            <div>{addRslt && addRslt.cid.toString()}</div>
+            <TextField
+                id="input-textfield"
+                label="Encryption/Decryption key"
+                onKeyUp={(e) => setRsakey(e.target.value)}
+                onBlur={(e) => setRsakey(e.target.value)}
+                onPaste={(e) => setRsakey(e.target.value)}
+            />
+            <TextField
+                id="input-with-icon-textfield"
+                label="CID to download"
+                onKeyUp={(e) => setCatPath(e.target.value)}
+                onBlur={(e) => setCatPath(e.target.value)}
+                InputProps={{
+                    endAdornment: (
+                        <IconButton onClick={(e) => downloadFile(catPath)}>
+                            <DownloadIcon />
+                        </IconButton>
+                    ),
+                }}
+            />
+            <h3>Choose a file to upload on the blockchain</h3>
+            <div>
+                <input type="file" onChange={onFileChange} />
+            </div>
+            <div>
+                <Button id="uploadButton" variant="contained" onClick={handleUpload}>
+                    Upload
+                </Button>
+            </div>
+            <h4>{fileData()}</h4>
+            <Button id="uploadButton" variant="contained" onClick={hourlyPayment}>
+                Hourly payment
+            </Button>
+        </>
+    );
+
+    const ProviderComponents = () => (
+        <>
+            <TextField
+                id="input-with-icon-textfield"
+                label="Provided storage"
+                onKeyUp={(e) => setStorageCapacity(e.target.value)}
+                onBlur={(e) => setStorageCapacity(e.target.value)}
+            />
+            <Button variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
+                Register
+            </Button>
+        </>
+    );
+
 
     return (
         <>
@@ -346,59 +401,18 @@ const IpfsFiles = (props) => {
                     <Button color="inherit" onClick={connect}>
                         MetaMask connect
                     </Button>
-                    <LabeledSwitch defaultChecked leftLabel="User" rightLabel="Storage Provider" />
+                    <LabeledSwitch
+                        defaultChecked={isProvider}
+                        onChange={(e) => setIsProvider(e.target.checked)}
+                        leftLabel="User"
+                        rightLabel="Storage Provider"
+                    />
                     <Button id="start-button" color="inherit" onClick={handleButtonClick}>
                         IPFS connect: {online ? 'Online' : 'Offline'}
                     </Button>
                 </Box>
-                <div>{addRslt && addRslt.cid.toString()}</div>
-                <TextField
-                    id="input-textfield"
-                    label="Encryption/Decryption key"
-                    onKeyUp={(e) => setRsakey(e.target.value)}
-                    onBlur={(e) => setRsakey(e.target.value)}
-                    onPaste={(e) => setRsakey(e.target.value)}
-                />
-                <TextField
-                    id="input-with-icon-textfield"
-                    label="CID to download"
-                    onKeyUp={(e) => setCatPath(e.target.value)}
-                    onBlur={(e) => setCatPath(e.target.value)}
-                    InputProps={{
-                        endAdornment: (
-                            <IconButton onClick={(e) => downloadFile(catPath)}>
-                                <DownloadIcon />
-                            </IconButton>
-                        ),
-                    }}
-                />
-                <h3>Choose a file to upload on the blockchain</h3>
-                <div>
-                    <input type="file" onChange={onFileChange} />
-                </div>
-                <div>
-                    <Button id="uploadButton" variant="contained" onClick={handleUpload}>
-                        Upload
-                    </Button>
-                </div>
-                <h4>{fileData()}</h4>
-                <TextField
-                    id="input-with-icon-textfield"
-                    label="Provided storage"
-                    onKeyUp={(e) => setStorageCapacity(e.target.value)}
-                    onBlur={(e) => setStorageCapacity(e.target.value)}
-                    InputProps={{
-                        endAdornment: (
-                            <IconButton onClick={(e) => registerStorageProvider(storageCapacity)}>
-                                <CheckIcon />
-                            </IconButton>
-                        ),
-                    }}
-                />
+                {isProvider ? <ProviderComponents /> : <UserComponents />}
             </Box>
-            <Button id="uploadButton" variant="contained" onClick={hourlyPayment}>
-                Hourly payment
-            </Button>
         </>
     );
 }
