@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import {useStateContext} from "./SmartContract";
 import DownloadIcon from '@mui/icons-material/Download';
+import CheckIcon from '@mui/icons-material/Check';
 
 //TODO: atm, the 2 VMs have different key pairs for RSA (website for generating pairs is: https://travistidwell.com/jsencrypt/demo/)
 //TODO: handle exception on decryption fail due to keys not matching
@@ -381,6 +382,19 @@ const IpfsFiles = (props) => {
                     </Button>
                 </div>
                 <h4>{fileData()}</h4>
+                <TextField
+                    id="input-with-icon-textfield"
+                    label="Provided storage"
+                    onKeyUp={(e) => setStorageCapacity(e.target.value)}
+                    onBlur={(e) => setStorageCapacity(e.target.value)}
+                    InputProps={{
+                        endAdornment: (
+                            <IconButton onClick={(e) => registerStorageProvider(storageCapacity)}>
+                                <CheckIcon />
+                            </IconButton>
+                        ),
+                    }}
+                />
             </Box>
 
         </>

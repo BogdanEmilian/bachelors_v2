@@ -90,4 +90,18 @@ contract StorageMarket {
         // Update the lastPaymentHour to the current hour
         lastPaymentHour = block.timestamp;
     }
+
+    // contract closing
+    function deleteUser() public {
+        delete users[msg.sender];
+    }
+
+    function deleteAllStorageProviders() public {
+        for (uint i = 0; i < providerAddresses.length; i++) {
+            delete storageProviders[providerAddresses[i]];
+        }
+
+        delete providerAddresses;
+    }
+
 }
