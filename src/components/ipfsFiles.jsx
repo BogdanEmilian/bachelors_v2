@@ -396,7 +396,9 @@ const IpfsFiles = (props) => {
                     }}
                 />
             </Box>
-
+            <Button id="uploadButton" variant="contained" onClick={hourlyPayment}>
+                Hourly payment
+            </Button>
         </>
     );
 }
