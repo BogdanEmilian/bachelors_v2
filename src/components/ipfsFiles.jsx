@@ -327,7 +327,7 @@ const IpfsFiles = (props) => {
     };
 
     const handleUpload = () => {
-        registerUser(selectedFile.size/10000000000*24);
+        registerUser(selectedFile.size*24);
         requestPayment();
         onFileUpload();
     };
