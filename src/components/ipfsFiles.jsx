@@ -1,30 +1,34 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
-import SubdirectoryArrowLeftIcon from '@mui/icons-material/SubdirectoryArrowLeft';
-import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
+import React, { useState, useEffect } from 'react';
+import { TextField, IconButton, Button, Typography, Box, Switch } from '@mui/material';
+import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
 import { create } from 'ipfs-http-client';
-import * as ipfsCluster from 'ipfs-cluster-api';
-import Button from "@mui/material/Button";
-import "../index.css";
+import ipfsCluster from 'ipfs-cluster-api';
 import NodeRSA from 'node-rsa';
-import {createTheme, styled} from '@mui/material/styles';
-import Switch from '@mui/material/Switch';
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import {useStateContext} from "./SmartContract";
+import { useStateContext } from "./SmartContract";
 import DownloadIcon from '@mui/icons-material/Download';
-import CheckIcon from '@mui/icons-material/Check';
+import "../index.css";
+import { green } from "@mui/material/colors";
 
-//TODO: atm, the 2 VMs have different key pairs for RSA (website for generating pairs is: https://travistidwell.com/jsencrypt/demo/)
-//TODO: handle exception on decryption fail due to keys not matching
-const key = new NodeRSA();
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: green,
+        },
+        secondary: {
+            main: '#11cb5f',
+        },
+    },
+    typography: {
+        fontFamily: 'Orbitron, sans-serif',
+    }
+});
 
+const StyledInputField = styled(TextField)({
+    marginBottom: '16px',
+});
 
-const cluster = ipfsCluster({
-    host: '192.168.1.164',
-    port: '9094',
-    protocol: 'http'
+const StyledButton = styled(Button)({
+    marginTop: '16px',
 });
 
 const Android12Switch = styled(Switch)(({ theme }) => ({
@@ -65,25 +69,24 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
         backgroundColor: theme.palette.secondary.main, // green when disabled
     },
 }));
-const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#800080', // Purple
-        },
-        secondary: {
-            main: '#008000', // Green
-        }
-    }
+
+const cluster = ipfsCluster({
+    host: '192.168.1.164',
+    port: '9094',
+    protocol: 'http'
 });
+
 const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
     return (
         <Box display="flex" alignItems="center">
             <Typography>{leftLabel}</Typography>
-            <Android12Switch {...props} theme={theme}/>
+            <Android12Switch {...props} theme={theme} />
             <Typography>{rightLabel}</Typography>
         </Box>
     );
 };
+
+const key = new NodeRSA();
 
 const IpfsFiles = (props) => {
     const {
@@ -113,7 +116,6 @@ const IpfsFiles = (props) => {
     const [paymentAmount, setPaymentAmount] = React.useState(0);
     const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
 
-
     useEffect(() => {
         if (props.online !== online) {
             if (online) {
@@ -132,7 +134,7 @@ const IpfsFiles = (props) => {
         if (selectedFile) {
             return (
                 <div>
-                    Daily price will be approximately: ~{selectedFile.size/10000000000*24}
+                    The minimum daily price will be approximately: ~{selectedFile.size / 1e9 * 0.1 * 24} excluding gas prices
                 </div>
             );
         }
@@ -140,63 +142,28 @@ const IpfsFiles = (props) => {
 
     const start = async () => {
         console.log("start()");
-        console.log("Secret Key: ", process.env.REACT_APP_SECRET_KEY);
 
-        try{
+        try {
             const createdNode = await create({
                 //TODO change the host to the storage provider
                 host: 'localhost', port: '5001', protocol: 'http'
             });
             setNode(createdNode);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
-    }
+    };
 
     const end = async () => {
-        console.log("end()");
-        if(node) {
+        if (node) {
             await node.stop();
-            setNode(null); // It's probably a good idea to set the node to null after stopping it
+            setNode(null);
         }
-    }
+    };
 
 
     const check = () => {
         return node.isOnline();
-    }
-
-    const addFile = async ( path, content ) => {
-        if ( ! this.check() && ( !path && ! content ) ) return;
-        let data = {};
-        if ( path ) data["path"] = path;
-        if ( content ) data["content"] = content;
-
-        const resultAdd = await node.add( data )
-
-        const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
-            err ? console.error(err) : console.log('pin added')
-        })
-        console.log(resultAdd.cid.toString())
-        console.log(result.toString())
-        this.setState( s => ({ addRslt: resultAdd, history: s.history.concat( resultAdd.cid.toString() ) } ) );
-    }
-
-    const catFile = async (path) => {
-        if (!check() && !path) return;
-        let arr = [];
-        let length = 0;
-        for await (const chunk of node.cat(path)) {
-            arr.push(chunk);
-            length += chunk.length;
-        }
-        let out = new Uint8Array(length);
-        let ptr = 0;
-        arr.forEach(item => {
-            out.set(item, ptr);
-            ptr += item.length;
-        });
-        setCatRslt(out);  // save Uint8Array instead of string
     };
 
     const onFileUpload = async () => {
@@ -213,12 +180,12 @@ const IpfsFiles = (props) => {
             // Encrypt file data
             const encryptedData = key.encryptPrivate(buffer, 'base64');
 
-            const resultAdd = await node.add({ content: encryptedData })
+            const resultAdd = await node.add({ content: encryptedData });
 
             const result = await cluster.pin.add(resultAdd.cid.toString(), (err) => {
-                err ? console.error(err) : console.log('pin added')
-            })
-            console.log(resultAdd.cid.toString())
+                err ? console.error(err) : console.log('pin added');
+            });
+            console.log(resultAdd.cid.toString());
 
             // Use setAddRslt function to update the state
             setAddRslt(resultAdd);
@@ -264,58 +231,6 @@ const IpfsFiles = (props) => {
         link.parentNode.removeChild(link);
     };
 
-
-
-    const stat = async( path ) => {
-        if ( this.check() && ! path ) return;
-        const stats = await node.files.stat( path )
-        this.setState({ statRsp : `${ stats.type} ${ stats.size} bytes ` });
-    }
-
-    const read = async ( path ) => {
-        if ( ! this.check() && ! path ) return;
-        let arr = [];
-        let length = 0;
-        for await (const chunk of node.files.read( path ) ) {
-            arr.push( chunk);
-            length += chunk.length;
-        }
-        let out = new Uint8Array( length );
-        let ptr = 0;
-        arr.forEach(item => {
-            out.set( item, ptr );
-            ptr += item.length;
-        });
-        this.setState({ readRslt :  new TextDecoder().decode( out ) });
-    }
-
-    const write = async ( path, content ) => {
-        if ( ! this.check() || !path || ! content ) return;
-        await node.files.write( path, content, { parents:true, create:true } );
-    }
-
-    const ls = async( path ) => {
-        if ( this.check() && ! path ) return;
-        const arr = [];
-        for await (const file of node.files.ls( path )) {
-            arr.push( file );
-            console.log( file );
-        }
-        this.setState({ lsFileRslt : arr });
-    }
-
-
-    const resolve = async ( path ) => {
-        if ( this.check() && ! path ) return;
-        const arr = [];
-        for await (const name of node.name.resolve( path )) {
-            arr.push( name );
-            console.log( name )
-        }
-        this.setState({ resolveRslt : arr });
-
-    }
-
     const handleButtonClick = async () => {
         if (online) {
             await end();
@@ -327,94 +242,115 @@ const IpfsFiles = (props) => {
     };
 
     const handleUpload = () => {
-        registerUser(selectedFile.size*24);
-        requestPayment(selectedFile.size*24);
+        registerUser(selectedFile.size * 24);
+        requestPayment(selectedFile.size * 24);
         onFileUpload();
     };
 
-    const handleDownload = () => {
+    const handleDownload = (catPath) => {
         downloadFile(catPath);
         deleteAllStorageProviders();
         deleteUser();
-    }
+    };
 
     const [isProvider, setIsProvider] = useState(false);
 
+    const commonStyles = {
+        width: '300px',
+        margin: '10px 0',
+    };
+
     const UserComponents = () => (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
             <div>{addRslt && addRslt.cid.toString()}</div>
-            <TextField
+            <StyledInputField
+                className="textFields-gb"
                 id="input-textfield"
                 label="Encryption/Decryption key"
                 onKeyUp={(e) => setRsakey(e.target.value)}
                 onBlur={(e) => setRsakey(e.target.value)}
                 onPaste={(e) => setRsakey(e.target.value)}
             />
-            <TextField
+            <StyledInputField
+                className="textFields-gb"
                 id="input-with-icon-textfield"
                 label="CID to download"
                 onKeyUp={(e) => setCatPath(e.target.value)}
                 onBlur={(e) => setCatPath(e.target.value)}
                 InputProps={{
                     endAdornment: (
-                        <IconButton onClick={(e) => downloadFile(catPath)}>
+                        <IconButton onClick={(e) => handleDownload(catPath)}>
                             <DownloadIcon />
                         </IconButton>
                     ),
                 }}
             />
+
             <h3>Choose a file to upload on the blockchain</h3>
+            {fileData()}
             <div>
                 <input type="file" onChange={onFileChange} />
             </div>
-            <div>
-                <Button id="uploadButton" variant="contained" onClick={handleUpload}>
-                    Upload
-                </Button>
+            <StyledButton className="textFields-gb" id="uploadButton" variant="contained" onClick={handleUpload}>
+                Upload
+            </StyledButton>
+            <div style={{ position: 'fixed', bottom: '16px', right: '16px' }}>
+                <StyledButton className="textFields-gb" id="uploadButton" variant="contained" onClick={hourlyPayment}>
+                    Hourly payment
+                </StyledButton>
             </div>
-            <h4>{fileData()}</h4>
-            <Button id="uploadButton" variant="contained" onClick={hourlyPayment}>
-                Hourly payment
-            </Button>
-        </>
+        </div>
     );
 
+
     const ProviderComponents = () => (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
             <TextField
+                className="textFields-gb"
+                style={commonStyles}
                 id="input-with-icon-textfield"
                 label="Provided storage"
                 onKeyUp={(e) => setStorageCapacity(e.target.value)}
                 onBlur={(e) => setStorageCapacity(e.target.value)}
             />
-            <Button variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
+            <StyledButton className="textFields-gb" variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
                 Register
-            </Button>
-        </>
+            </StyledButton>
+        </div>
     );
 
 
     return (
-        <>
-            <Box display="flex" flexDirection="column" alignItems="center">
-                <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" marginBottom={2}>
-                    <Button color="inherit" onClick={connect}>
-                        MetaMask connect
-                    </Button>
-                    <LabeledSwitch
-                        defaultChecked={isProvider}
-                        onChange={(e) => setIsProvider(e.target.checked)}
-                        leftLabel="User"
-                        rightLabel="Storage Provider"
-                    />
-                    <Button id="start-button" color="inherit" onClick={handleButtonClick}>
-                        IPFS connect: {online ? 'Online' : 'Offline'}
-                    </Button>
+        <div
+            className="App"
+            style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                height: '100vh',
+                background: 'linear-gradient(to right, violet, gray-blue)',
+            }}
+        >
+            <ThemeProvider theme={theme}>
+                <Box display="flex" flexDirection="column" alignItems="center" gridColumn="span 3">
+                    <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" marginBottom={2}>
+                        <Button className="textFields-gb" color="inherit" onClick={connect}>
+                            MetaMask connect
+                        </Button>
+                        <LabeledSwitch
+                            defaultChecked={isProvider}
+                            onChange={(e) => setIsProvider(e.target.checked)}
+                            leftLabel="User"
+                            rightLabel="Storage Provider"
+                        />
+                        <Button className="textFields-gb" id="start-button" color="inherit" onClick={handleButtonClick}>
+                            IPFS connect: {online ? 'Online' : 'Offline'}
+                        </Button>
+                    </Box>
+                    {isProvider ? <ProviderComponents /> : <UserComponents />}
                 </Box>
-                {isProvider ? <ProviderComponents /> : <UserComponents />}
-            </Box>
-        </>
+            </ThemeProvider>
+        </div>
     );
-}
+};
 
 export default IpfsFiles;
