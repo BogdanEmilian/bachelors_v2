@@ -3,8 +3,8 @@ import abi from "../contracts/StorageMarket_ABI.json";
 import erc20Abi from "./../contracts/CSC_ABI.json";
 import Web3 from 'web3';
 
-const CONTRACT_ADDRESS = "0xEED6B2798ef10AD8221936a068Da9D92Dc704FB5";  // Storage Market address
-const TOKEN_ADDRESS = "0x22e6633e0979cD0627DfeCB9e434761d291703C4";     // CSC address
+const CONTRACT_ADDRESS = "0xfF1Bdd9731744ce5932117226746C9d7098E2c1C";  // Storage Market address
+const TOKEN_ADDRESS = "0x7522AC61e8CcC77d05863FF69F393DDc7CFAf5C3";     // CSC address
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
@@ -46,30 +46,50 @@ export const StateContextProvider = ({ children }) => {
         initializeContract();
     }, [web3, address]);
 
+    // register user
     const registerUser = async (costDaily) => {
         try {
+            // Please note that costDaily needs to be in the same unit that the contract expects (i.e. wei).
             await contract.methods.registerUser(address, costDaily).send({from: address});
         } catch (error) {
             console.error(error);
         }
     };
 
-    const registerStorageProvider = async (providerAddresses, storageCapacity, rewardDaily) => {
+    // register storage provider
+    const registerStorageProvider = async (totalCapacity) => {
         try {
-            console.log("Trimmed address: " + providerAddresses);
-            console.log("\n Storage capacity: " + storageCapacity + "\n Reward daily: " + rewardDaily);
-            console.log("From address: " + {from:address});
-
-            await contract.methods.registerStorageProvider(providerAddresses, storageCapacity, rewardDaily).send({from: address});
+            // Please note that totalCapacity needs to be in the same unit that the contract expects.
+            await contract.methods.registerStorageProvider(address, totalCapacity).send({from: address});
         } catch (error) {
             console.error(error);
         }
     };
 
-    const requestPayment = async (amount) => {
+    // remove user
+    const deleteUser = async () => {
         try {
-            await tokenContract.methods.approve(CONTRACT_ADDRESS, amount).send({from: address});
-            await contract.methods.requestPayment(amount).send({from: address});
+            // Please note that costDaily needs to be in the same unit that the contract expects (i.e. wei).
+            await contract.methods.deleteUser().send({from: address});
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // remove storage providers
+    const deleteAllStorageProviders = async () => {
+        try {
+            // Please note that costDaily needs to be in the same unit that the contract expects (i.e. wei).
+            await contract.methods.deleteAllStorageProviders().send({from: address});
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // request payment
+    const requestPayment = async () => {
+        try {
+            await contract.methods.requestPayment().send({from: address});
         } catch (error) {
             console.error(error);
         }
@@ -93,18 +113,14 @@ export const StateContextProvider = ({ children }) => {
         initializeTokenContract();
     }, [web3, address]);
 
-    const hourlyPayment = async (amount) => {
+    // hourly payment
+    const hourlyPayment = async () => {
         try {
-            // Approve the contract to spend tokens on behalf of the user
-            await tokenContract.methods.approve(CONTRACT_ADDRESS, amount).send({from: address});
-            // Call the hourlyPayment function on the contract
             await contract.methods.hourlyPayment().send({from: address});
         } catch (error) {
-            console.log({from: address}.toString());
             console.error(error);
         }
     };
-
 
 
     return (
@@ -117,6 +133,8 @@ export const StateContextProvider = ({ children }) => {
                 registerStorageProvider,
                 requestPayment,
                 hourlyPayment,
+                deleteUser,
+                deleteAllStorageProviders
             }}
         >
             {children}

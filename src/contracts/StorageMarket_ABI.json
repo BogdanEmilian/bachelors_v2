@@ -12,6 +12,20 @@
   },
   {
     "inputs": [],
+    "name": "deleteAllStorageProviders",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deleteUser",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "distributePayment",
     "outputs": [],
     "stateMutability": "nonpayable",

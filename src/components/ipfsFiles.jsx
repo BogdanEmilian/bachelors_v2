@@ -13,12 +13,12 @@ import Switch from '@mui/material/Switch';
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import {useStateContext} from "./SmartContract";
+import DownloadIcon from '@mui/icons-material/Download';
 
 //TODO: atm, the 2 VMs have different key pairs for RSA (website for generating pairs is: https://travistidwell.com/jsencrypt/demo/)
 //TODO: handle exception on decryption fail due to keys not matching
 const key = new NodeRSA();
-key.importKey(process.env.REACT_APP_PRIVATE_KEY, 'private');
-key.importKey(process.env.REACT_APP_PUBLIC_KEY, 'public');
+
 
 const cluster = ipfsCluster({
     host: '192.168.1.164',
@@ -85,6 +85,16 @@ const LabeledSwitch = ({ leftLabel, rightLabel, ...props }) => {
 };
 
 const IpfsFiles = (props) => {
+    const {
+        connect,
+        registerUser,
+        registerStorageProvider,
+        requestPayment,
+        hourlyPayment,
+        deleteUser,
+        deleteAllStorageProviders
+    } = useStateContext();
+
     const [selectedFile, setSelectedFile] = useState(null);
     const [addPath, setAddPath] = useState('');
     const [addContent, setAddContent] = useState('');
@@ -92,8 +102,15 @@ const IpfsFiles = (props) => {
     const [catPath, setCatPath] = useState('');
     const [catRslt, setCatRslt] = useState(null);
     const [history, setHistory] = useState([]);
+    const [rsakey, setRsakey] = useState('');
     const [online, setOnline] = useState(false);
     const [node, setNode] = useState(null);
+    const [userCostDaily, setUserCostDaily] = React.useState(0);
+    const [providerAddresses, setProviderAddresses] = React.useState('');
+    const [storageCapacity, setStorageCapacity] = React.useState(0);
+    const [rewardDaily, setRewardDaily] = React.useState(0);
+    const [paymentAmount, setPaymentAmount] = React.useState(0);
+    const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
 
 
     useEffect(() => {
@@ -114,16 +131,7 @@ const IpfsFiles = (props) => {
         if (selectedFile) {
             return (
                 <div>
-                    <h4>File Details:</h4>
-                    <p>File Name: {selectedFile.name}</p>
-                    <p>File Size: {selectedFile.size}</p>
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                    <br />
-                    <h5>Choose before Pressing the Upload button</h5>
+                    Daily price will be approximately: ~{selectedFile.size/10000000000*24}
                 </div>
             );
         }
@@ -174,7 +182,7 @@ const IpfsFiles = (props) => {
     }
 
     const catFile = async (path) => {
-        if (!this.check() && !path) return;
+        if (!check() && !path) return;
         let arr = [];
         let length = 0;
         for await (const chunk of node.cat(path)) {
@@ -198,6 +206,8 @@ const IpfsFiles = (props) => {
         fileReader.onload = async (e) => {
             // Convert ArrayBuffer to Buffer
             const buffer = Buffer.from(e.target.result);
+
+            key.importKey(rsakey, 'private');
 
             // Encrypt file data
             const encryptedData = key.encryptPrivate(buffer, 'base64');
@@ -234,6 +244,8 @@ const IpfsFiles = (props) => {
 
         // Convert the Uint8Array to a string
         const encryptedData = new TextDecoder().decode(out);
+
+        key.importKey(rsakey, 'public');
 
         // Decrypt file data
         const decryptedData = key.decryptPublic(Buffer.from(encryptedData, 'base64'));
@@ -313,85 +325,64 @@ const IpfsFiles = (props) => {
         }
     };
 
+    const handleUpload = () => {
+        registerUser(selectedFile.size/10000000000*24);
+        requestPayment();
+        onFileUpload();
+    };
+
+    const handleDownload = () => {
+        downloadFile(catPath);
+        deleteAllStorageProviders();
+        deleteUser();
+    }
+
+
     return (
         <>
-            <Box display="flex" justifyContent="flex-end" marginRight={2}>
-                <LabeledSwitch
-                    defaultChecked
-                    leftLabel="User"
-                    rightLabel="Storage Provider"
+            <Box display="flex" flexDirection="column" alignItems="center">
+                <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" marginBottom={2}>
+                    <Button color="inherit" onClick={connect}>
+                        MetaMask connect
+                    </Button>
+                    <LabeledSwitch defaultChecked leftLabel="User" rightLabel="Storage Provider" />
+                    <Button id="start-button" color="inherit" onClick={handleButtonClick}>
+                        IPFS connect: {online ? 'Online' : 'Offline'}
+                    </Button>
+                </Box>
+                <div>{addRslt && addRslt.cid.toString()}</div>
+                <TextField
+                    id="input-textfield"
+                    label="Encryption/Decryption key"
+                    onKeyUp={(e) => setRsakey(e.target.value)}
+                    onBlur={(e) => setRsakey(e.target.value)}
+                    onPaste={(e) => setRsakey(e.target.value)}
                 />
+                <TextField
+                    id="input-with-icon-textfield"
+                    label="CID to download"
+                    onKeyUp={(e) => setCatPath(e.target.value)}
+                    onBlur={(e) => setCatPath(e.target.value)}
+                    InputProps={{
+                        endAdornment: (
+                            <IconButton onClick={(e) => downloadFile(catPath)}>
+                                <DownloadIcon />
+                            </IconButton>
+                        ),
+                    }}
+                />
+                <h3>Choose a file to upload on the blockchain</h3>
+                <div>
+                    <input type="file" onChange={onFileChange} />
+                </div>
+                <div>
+                    <Button id="uploadButton" variant="contained" onClick={handleUpload}>
+                        Upload
+                    </Button>
+                </div>
+                <h4>{fileData()}</h4>
             </Box>
-            <Box>
-            {/*    implement connect to metamask*/}
-            </Box>
-            <Box display="flex" justifyContent="flex-start" marginLeft={2}>
-                <Button id="start-button" color="inherit" onClick={handleButtonClick}>
-                    {online ? 'stop' : 'start'}
-                </Button>
-            </Box>
 
-
-
-            <h1>IPFS FILES API</h1>
-            <h2>ipfs.add()</h2>
-
-            <TextField
-                fullWidth
-                id="input-with-icon-textfield"
-                label="Path"
-                onKeyUp={ e => setAddPath(e.target.value) }
-                onBlur={ e => setAddPath(e.target.value) }
-            /> <TextField
-            fullWidth
-            id="input-with-icon-textfield"
-            label="Content"
-            onKeyUp={ e => setAddContent(e.target.value) }
-            onBlur={ e => setAddContent(e.target.value) }
-
-            InputProps={{
-                endAdornment: (
-                    <IconButton onClick={ e => addFile( setAddPath , setAddContent ) } >
-                        <SubdirectoryArrowLeftIcon />
-                    </IconButton>
-                ),
-            }}
-        />
-            <div>
-                { addRslt && addRslt.cid.toString() }
-            </div>
-            <h2> ipfs.cat() </h2>
-            <TextField
-                fullWidth
-                id="input-with-icon-textfield"
-                label="Path"
-                onKeyUp={ e => setCatPath(e.target.value) }
-                onBlur={ e => setCatPath(e.target.value) }
-                InputProps={{
-                    endAdornment: (
-                        <IconButton onClick={ e => catFile( catPath ) } >
-                            <SubdirectoryArrowLeftIcon />
-                        </IconButton>
-                    ),
-                }}
-            />
-
-            {/* Add file upload UI */}
-            <h1>
-                Choose a file to upload on the blockchain
-            </h1>
-            <div>
-                <input type="file" onChange={onFileChange} />
-            </div>
-            <div>
-                <Button id="uploadButton" variant="contained" onClick={onFileUpload}>Upload</Button>
-            </div>
-            {fileData()}
-            <div padding={20}>
-                <IconButton onClick={async e => { await downloadFile(catPath); }} >
-                    <SubdirectoryArrowLeftIcon />
-                </IconButton>
-            </div>
         </>
     );
 }
