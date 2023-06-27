@@ -12,7 +12,7 @@ import { green } from "@mui/material/colors";
 const theme = createTheme({
     palette: {
         primary: {
-            main: green,
+            main: green.A400,
         },
         secondary: {
             main: '#11cb5f',
@@ -230,7 +230,7 @@ const IpfsFiles = (props) => {
         link.click();
         link.parentNode.removeChild(link);
     };
-
+//toast logger
     const handleButtonClick = async () => {
         if (online) {
             await end();
