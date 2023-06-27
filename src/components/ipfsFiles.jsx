@@ -7,12 +7,11 @@ import NodeRSA from 'node-rsa';
 import { useStateContext } from "./SmartContract";
 import DownloadIcon from '@mui/icons-material/Download';
 import "../index.css";
-import { green } from "@mui/material/colors";
 
 const theme = createTheme({
     palette: {
         primary: {
-            main: green.A400,
+            main: '#7b8ba6',
         },
         secondary: {
             main: '#11cb5f',
@@ -115,6 +114,9 @@ const IpfsFiles = (props) => {
     const [rewardDaily, setRewardDaily] = React.useState(0);
     const [paymentAmount, setPaymentAmount] = React.useState(0);
     const [hourlyPaymentAmount, setHourlyPaymentAmount] = React.useState(0);
+    const [capacityLabel, setCapacityLabel] = useState('Storage provided');
+    const [rsaKeyField, setRsaKeyField] = useState('Encryption/Decryption key');
+    const [cidInput, setCidInput] = useState('CID to download');
 
     useEffect(() => {
         if (props.online !== online) {
@@ -266,17 +268,21 @@ const IpfsFiles = (props) => {
             <StyledInputField
                 className="textFields-gb"
                 id="input-textfield"
-                label="Encryption/Decryption key"
-                onKeyUp={(e) => setRsakey(e.target.value)}
-                onBlur={(e) => setRsakey(e.target.value)}
-                onPaste={(e) => setRsakey(e.target.value)}
+                label={rsaKeyField}
+                onBlur={(e) => {
+                    setRsakey(e.target.value);
+                    setRsaKeyField(e.target.value);
+                }}
             />
             <StyledInputField
                 className="textFields-gb"
                 id="input-with-icon-textfield"
-                label="CID to download"
-                onKeyUp={(e) => setCatPath(e.target.value)}
-                onBlur={(e) => setCatPath(e.target.value)}
+                label={cidInput}
+                onBlur={(e) => {
+                    setCatPath(e.target.value);
+                    setCidInput(e.target.value);
+                }
+                }
                 InputProps={{
                     endAdornment: (
                         <IconButton onClick={(e) => handleDownload(catPath)}>
@@ -307,11 +313,13 @@ const IpfsFiles = (props) => {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
             <TextField
                 className="textFields-gb"
-                style={commonStyles}
+                style={{...commonStyles}}  // using bgColor state here
                 id="input-with-icon-textfield"
-                label="Provided storage"
-                onKeyUp={(e) => setStorageCapacity(e.target.value)}
-                onBlur={(e) => setStorageCapacity(e.target.value)}
+                label={capacityLabel}
+                onBlur={(e) => {
+                    setStorageCapacity(e.target.value);
+                    setCapacityLabel(e.target.value);
+                }}
             />
             <StyledButton className="textFields-gb" variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
                 Register
