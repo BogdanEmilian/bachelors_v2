@@ -89,6 +89,7 @@ const key = new NodeRSA();
 
 const IpfsFiles = (props) => {
     const {
+        address,
         connect,
         registerUser,
         registerStorageProvider,
@@ -263,8 +264,8 @@ const IpfsFiles = (props) => {
     };
 
     const UserComponents = () => (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
-            <div>{addRslt && addRslt.cid.toString()}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center', marginTop: '200px' }}>
+        <div>{addRslt && addRslt.cid.toString()}</div>
             <StyledInputField
                 className="textFields-gb"
                 id="input-textfield"
@@ -310,7 +311,7 @@ const IpfsFiles = (props) => {
 
 
     const ProviderComponents = () => (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', justifyContent: 'center', marginTop: '200px' }}>
             <TextField
                 className="textFields-gb"
                 style={{...commonStyles}}  // using bgColor state here
@@ -321,7 +322,10 @@ const IpfsFiles = (props) => {
                     setCapacityLabel(e.target.value);
                 }}
             />
-            <StyledButton className="textFields-gb" variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
+            <StyledButton style={{backgroundColor: "#3091ae",
+                color: "#FFFFFF",
+                fontWeight: "bold",
+                fontSize: "medium"}} className="textFields-gb" variant="contained" onClick={(e) => registerStorageProvider(storageCapacity)}>
                 Register
             </StyledButton>
         </div>
@@ -341,9 +345,12 @@ const IpfsFiles = (props) => {
             <ThemeProvider theme={theme}>
                 <Box display="flex" flexDirection="column" alignItems="center" gridColumn="span 3">
                     <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" marginBottom={2}>
-                        <Button className="textFields-gb" color="inherit" onClick={connect}>
-                            MetaMask connect
-                        </Button>
+                        <Box display="flex" alignItems="center">
+                            <Button className="textFields-gb" color="inherit" onClick={connect}>
+                                MetaMask connect
+                            </Button>
+                            <Typography variant="body1" style={{marginLeft: '10px'}}>{address}</Typography>
+                        </Box>
                         <LabeledSwitch
                             defaultChecked={isProvider}
                             onChange={(e) => setIsProvider(e.target.checked)}

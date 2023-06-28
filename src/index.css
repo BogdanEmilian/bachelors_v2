@@ -17,8 +17,10 @@ code {
 }
 
 #uploadButton {
-  background-color: mediumaquamarine;
-  color: #282c34;
+  background: #3091ae;
+  color: #FFFFFF;
+  font-weight: bold;
+  font-size: medium;
 }
 
 .textFields-gb {
@@ -33,6 +35,8 @@ code {
 }
 
 .App {
-  background: rgb(76, 27, 98);
-  background: radial-gradient(circle, rgba(76, 27, 98, 1) 0%, rgba(124, 33, 157, 1) 100%);
+  background: radial-gradient(rgba(50,50,50,1) 0%, rgba(60,60,60,1) 100%);
+
+
+
 }
